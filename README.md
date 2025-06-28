@@ -2,6 +2,13 @@
 
 A simple kanban board UI for [swarm_tasks](https://github.com/todddickerson/swarm_tasks).
 
+## Features
+
+- 📋 **Kanban Board Interface** - Drag and drop tasks between backlog, active, completed, and blocked states
+- 🔄 **Auto-refresh** - UI updates automatically when tasks are modified by AI agents or CLI
+- 🤖 **swarm-tasks CLI Integration** - Uses the swarm-tasks Ruby gem for task operations when available
+- 🎯 **Zero Configuration** - Works out of the box with standard swarm_tasks directory structure
+
 ## Quick Start
 
 Run directly with npx (no installation required):
@@ -29,6 +36,18 @@ Then run from any project:
 ```bash
 swarm-tasks-ui
 ```
+
+### Optional: Install swarm_tasks Ruby gem
+
+For better integration, install the swarm_tasks Ruby gem:
+
+```bash
+gem install swarm_tasks
+```
+
+When available, swarm-tasks-ui will use the CLI commands for:
+- Listing tasks with `swarm-tasks list --json`
+- Moving tasks with `swarm-tasks move <task-id> <state>`
 
 ## Usage
 
