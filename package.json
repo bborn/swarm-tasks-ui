@@ -9,7 +9,7 @@
     "project-management",
     "ai"
   ],
-  "author": "PROPBOX Team",
+  "author": "Bruno Bornsztein",
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -52,6 +52,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/propbox/swarm-tasks-ui"
+    "url": "https://github.com/bborn/swarm-tasks-ui"
   }
 }

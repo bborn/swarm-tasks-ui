@@ -126,7 +126,7 @@ swarm-tasks-ui
 Clone and install dependencies:
 
 ```bash
-git clone https://github.com/propbox/swarm-tasks-ui
+git clone https://github.com/bborn/swarm-tasks-ui
 cd swarm-tasks-ui
 npm install
 ```
