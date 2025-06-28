@@ -168,10 +168,10 @@
 </script>
 
 <div class="min-h-screen bg-gray-100">
-  <header class="bg-white shadow-sm border-b">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
-        <h1 class="text-2xl font-bold text-gray-900">PROPBOX Tasks</h1>
+  <header class="bg-white border-b shadow-sm">
+    <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <h1 class="text-2xl font-bold text-gray-900">Swarm Tasks UI</h1>
         <div class="text-sm text-gray-500">
           Kanban board for swarm task management
         </div>
@@ -179,8 +179,8 @@
     </div>
   </header>
   
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+  <main class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
       <TaskColumn 
         title="Backlog" 
         tasks={tasks.backlog} 
