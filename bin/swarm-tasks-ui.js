@@ -119,6 +119,9 @@ async function serveBuiltUI(distPath) {
   const { default: express } = await import('express');
   const app = express();
   
+  // Parse JSON bodies
+  app.use(express.json());
+  
   // Inject API URL configuration into HTML
   app.use(async (req, res, next) => {
     if (req.path === '/' || req.path === '/index.html') {
@@ -138,18 +141,32 @@ async function serveBuiltUI(distPath) {
   app.use(express.static(distPath));
   
   // Proxy API requests to the backend
-  app.use('/api', (req, res) => {
+  app.use('/api', async (req, res) => {
     const target = `http://localhost:${options.port}`;
-    const url = new URL(req.url, target);
+    const url = `${target}${req.originalUrl}`;
     
-    fetch(url, {
-      method: req.method,
-      headers: req.headers,
-      body: req.method !== 'GET' && req.method !== 'HEAD' ? req.body : undefined
-    })
-      .then(response => response.text())
-      .then(body => res.send(body))
-      .catch(err => res.status(500).send(err.message));
+    try {
+      const response = await fetch(url, {
+        method: req.method,
+        headers: {
+          ...req.headers,
+          host: `localhost:${options.port}`
+        },
+        body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined
+      });
+      
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+        res.status(response.status).json(data);
+      } else {
+        const text = await response.text();
+        res.status(response.status).send(text);
+      }
+    } catch (err) {
+      console.error('Proxy error:', err);
+      res.status(500).send(err.message);
+    }
   });
   
   const uiServer = app.listen(options.uiPort, () => {
