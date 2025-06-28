@@ -1,0 +1,16 @@
+# Source files
+src/
+*.svelte
+
+# Config files
+vite.config.js
+tailwind.config.js
+postcss.config.js
+
+# Development
+node_modules/
+.gitignore
+*.log
+
+# Build tools
+index.html
