@@ -120,10 +120,10 @@ async function serveBuiltUI(distPath) {
   const app = express();
   
   // Inject API URL configuration into HTML
-  app.use((req, res, next) => {
+  app.use(async (req, res, next) => {
     if (req.path === '/' || req.path === '/index.html') {
       const htmlPath = path.join(distPath, 'index.html');
-      let html = fs.readFileSync(htmlPath, 'utf8');
+      let html = await fs.readFile(htmlPath, 'utf8');
       
       // Inject the API URL configuration
       const configScript = `<script>window.__API_URL__ = '';</script>`;
@@ -169,7 +169,7 @@ async function serveDevelopmentUI() {
   // Run vite dev server with the API URL configured
   const env = {
     ...process.env,
-    VITE_API_URL: `http://localhost:${options.port}`
+    VITE_API_PORT: options.port
   };
   
   const vite = spawn('npx', ['vite', '--port', options.uiPort, '--host'], {

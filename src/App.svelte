@@ -13,23 +13,50 @@
   let showModal = false;
   let editingTask = null;
   let selectedColumn = 'backlog';
+  let lastUpdated = null;
+  let isSyncing = false;
+  let autoSyncEnabled = true;
   
   // Get API URL from environment or window configuration
-  const apiUrl = import.meta.env.VITE_API_URL || window.__API_URL__ || '';
+  // In development, leave empty to use Vite's proxy
+  const apiUrl = import.meta.env.PROD 
+    ? (window.__API_URL__ || '') 
+    : '';
   
-  // Load tasks on mount
+  let pollingInterval;
+  const POLLING_INTERVAL = 2000; // Poll every 2 seconds
+  
+  // Load tasks on mount and start polling
   onMount(async () => {
     await loadTasks();
+    
+    // Start polling for updates
+    pollingInterval = setInterval(async () => {
+      if (autoSyncEnabled) {
+        await loadTasks();
+      }
+    }, POLLING_INTERVAL);
+    
+    // Cleanup on unmount
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
   });
   
   async function loadTasks() {
+    isSyncing = true;
     try {
       const response = await fetch(`${apiUrl}/api/tasks`);
       const data = await response.json();
       
-      // Transform the data to use camelCase
+      // Transform the data and check for changes
+      let hasChanges = false;
+      const newTasks = {};
+      
       Object.keys(data).forEach(state => {
-        tasks[state] = data[state].map(task => ({
+        newTasks[state] = data[state].map(task => ({
           id: task.id,
           title: task.title,
           priority: task.priority,
@@ -39,20 +66,34 @@
           description: task.description,
           filename: task.filename
         }));
+        
+        // Check if this state has changed
+        if (JSON.stringify(tasks[state]) !== JSON.stringify(newTasks[state])) {
+          hasChanges = true;
+        }
       });
       
-      tasks = tasks;
+      // Only update if there are actual changes
+      if (hasChanges) {
+        tasks = newTasks;
+        lastUpdated = new Date();
+        console.log('Tasks updated from file system');
+      }
     } catch (error) {
       console.error('Error loading tasks:', error);
+    } finally {
+      isSyncing = false;
     }
   }
   
-  function handleDragStart(event, task, fromColumn) {
+  function handleDragStart(e) {
+    const { event, task, column } = e.detail;
     event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/json', JSON.stringify({ task, fromColumn }));
+    event.dataTransfer.setData('text/json', JSON.stringify({ task, fromColumn: column }));
   }
   
-  function handleDrop(event, toColumn) {
+  function handleDrop(e) {
+    const { event, column: toColumn } = e.detail;
     event.preventDefault();
     const data = JSON.parse(event.dataTransfer.getData('text/json'));
     const { task, fromColumn } = data;
@@ -69,7 +110,8 @@
     }
   }
   
-  function handleDragOver(event) {
+  function handleDragOver(e) {
+    const { event } = e.detail;
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
   }
@@ -175,8 +217,48 @@
     <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <h1 class="text-2xl font-bold text-gray-900">Swarm Tasks UI</h1>
-        <div class="text-sm text-gray-500">
-          Kanban board for swarm task management
+        <div class="flex items-center space-x-4">
+          <div class="text-sm text-gray-500">
+            Kanban board for swarm task management
+          </div>
+          <div class="flex items-center space-x-2 text-xs text-gray-400">
+            <button 
+              on:click={() => autoSyncEnabled = !autoSyncEnabled}
+              class="flex items-center space-x-1 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+              title="{autoSyncEnabled ? 'Pause' : 'Resume'} auto-sync"
+            >
+              {#if autoSyncEnabled}
+                {#if isSyncing}
+                  <svg class="animate-spin h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Syncing...</span>
+                {:else if lastUpdated}
+                  <svg class="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                  <span>Auto-sync active</span>
+                {:else}
+                  <span>Waiting for changes...</span>
+                {/if}
+              {:else}
+                <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>Auto-sync paused</span>
+              {/if}
+            </button>
+            <button
+              on:click={loadTasks}
+              class="p-1 rounded hover:bg-gray-100 transition-colors"
+              title="Refresh now"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -10,15 +10,15 @@
   const dispatch = createEventDispatcher();
   
   function handleDragStart(event, task) {
-    dispatch('dragstart', event, task, column);
+    dispatch('dragstart', { event, task, column });
   }
   
   function handleDrop(event) {
-    dispatch('drop', event, column);
+    dispatch('drop', { event, column });
   }
   
   function handleDragOver(event) {
-    dispatch('dragover', event);
+    dispatch('dragover', { event });
   }
   
   const colorClasses = {

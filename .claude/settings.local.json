@@ -9,7 +9,10 @@
       "Bash(npm run build:*)",
       "Bash(find:*)",
       "Bash(npm unpublish:*)",
-      "Bash(npm publish:*)"
+      "Bash(npm publish:*)",
+      "Bash(pkill:*)",
+      "Bash(true)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }
