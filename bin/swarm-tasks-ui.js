@@ -104,17 +104,36 @@ async function startServer(tasksDir) {
 async function serveUI() {
   const distPath = path.join(packageDir, 'dist');
   
-  // Check if dist exists
+  // Check if dist exists, if not run in dev mode
   try {
     await fs.access(distPath);
+    return await serveBuiltUI(distPath);
   } catch {
-    console.error(chalk.red('Error: UI not built. Please run "npm run build" first.'));
-    process.exit(1);
+    console.log(chalk.yellow('Warning: Built UI not found. Starting in development mode...'));
+    return await serveDevelopmentUI();
   }
-  
+}
+
+async function serveBuiltUI(distPath) {
   // Use express to serve the static files
   const { default: express } = await import('express');
   const app = express();
+  
+  // Inject API URL configuration into HTML
+  app.use((req, res, next) => {
+    if (req.path === '/' || req.path === '/index.html') {
+      const htmlPath = path.join(distPath, 'index.html');
+      let html = fs.readFileSync(htmlPath, 'utf8');
+      
+      // Inject the API URL configuration
+      const configScript = `<script>window.__API_URL__ = '';</script>`;
+      html = html.replace('</head>', `${configScript}\n</head>`);
+      
+      res.send(html);
+    } else {
+      next();
+    }
+  });
   
   app.use(express.static(distPath));
   
@@ -146,6 +165,34 @@ async function serveUI() {
   return uiServer;
 }
 
+async function serveDevelopmentUI() {
+  // Run vite dev server with the API URL configured
+  const env = {
+    ...process.env,
+    VITE_API_URL: `http://localhost:${options.port}`
+  };
+  
+  const vite = spawn('npx', ['vite', '--port', options.uiPort, '--host'], {
+    cwd: packageDir,
+    env,
+    stdio: 'inherit'
+  });
+  
+  vite.on('error', (err) => {
+    console.error(chalk.red('Failed to start vite dev server:'), err);
+    process.exit(1);
+  });
+  
+  // Wait for vite to start
+  await new Promise(resolve => setTimeout(resolve, 3000));
+  
+  if (options.open) {
+    open(`http://localhost:${options.uiPort}`);
+  }
+  
+  return vite;
+}
+
 async function main() {
   console.log(chalk.bold.blue('Starting swarm-tasks-ui...'));
   
@@ -173,7 +220,11 @@ async function main() {
   process.on('SIGINT', () => {
     console.log(chalk.yellow('\nShutting down...'));
     server.kill();
-    uiServer.close();
+    if (uiServer.close) {
+      uiServer.close();
+    } else {
+      uiServer.kill();
+    }
     process.exit(0);
   });
 }

@@ -14,6 +14,9 @@
   let editingTask = null;
   let selectedColumn = 'backlog';
   
+  // Get API URL from environment or window configuration
+  const apiUrl = import.meta.env.VITE_API_URL || window.__API_URL__ || '';
+  
   // Load tasks on mount
   onMount(async () => {
     await loadTasks();
@@ -21,7 +24,7 @@
   
   async function loadTasks() {
     try {
-      const response = await fetch('/api/tasks');
+      const response = await fetch(`${apiUrl}/api/tasks`);
       const data = await response.json();
       
       // Transform the data to use camelCase
@@ -73,7 +76,7 @@
   
   async function saveTaskMove(taskId, newState) {
     try {
-      const response = await fetch(`/api/tasks/${taskId}/move`, {
+      const response = await fetch(`${apiUrl}/api/tasks/${taskId}/move`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ toState: newState })
@@ -108,7 +111,7 @@
     try {
       if (editingTask) {
         // Update existing task
-        const response = await fetch(`/api/tasks/${editingTask.id}?state=${selectedColumn}`, {
+        const response = await fetch(`${apiUrl}/api/tasks/${editingTask.id}?state=${selectedColumn}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -124,7 +127,7 @@
         );
       } else {
         // Create new task
-        const response = await fetch(`/api/tasks?state=${selectedColumn}`, {
+        const response = await fetch(`${apiUrl}/api/tasks?state=${selectedColumn}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -151,7 +154,7 @@
   async function deleteTask(taskId, column) {
     if (confirm('Are you sure you want to delete this task?')) {
       try {
-        const response = await fetch(`/api/tasks/${taskId}`, {
+        const response = await fetch(`${apiUrl}/api/tasks/${taskId}`, {
           method: 'DELETE'
         });
         
